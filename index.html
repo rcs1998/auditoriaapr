@@ -308,15 +308,15 @@ canvas { display: block; }
       <span>ℹ️</span><span id="alertMsg"></span>
     </div>
     <div class="kpi-grid">
-      <div class="kpi-card"><div class="kpi-emoji">✅</div><div class="kpi-label">Conformidade Geral</div><div class="kpi-value" id="kpiConf">—</div><div class="kpi-sub">média das empresas</div></div>
+      <div class="kpi-card"><div class="kpi-emoji">✅</div><div class="kpi-label">Índice de Qualidade</div><div class="kpi-value" id="kpiConf">—</div><div class="kpi-sub">média das empresas</div></div>
       <div class="kpi-card"><div class="kpi-emoji">📋</div><div class="kpi-label">Auditorias Realizadas</div><div class="kpi-value" id="kpiAud">—</div><div class="kpi-sub">no período selecionado</div></div>
       <div class="kpi-card"><div class="kpi-emoji">⚠️</div><div class="kpi-label">Não Conformidades</div><div class="kpi-value" id="kpiNC">—</div><div class="kpi-sub">requerem plano de ação</div></div>
       <div class="kpi-card"><div class="kpi-emoji">🏆</div><div class="kpi-label">Melhor Empresa</div><div class="kpi-value" id="kpiMelhor" style="font-size:18px;padding-top:6px">—</div><div class="kpi-sub" id="kpiMelhorSub"></div></div>
     </div>
     <div class="grid-2">
       <div class="card" style="animation-delay:0.1s">
-        <div class="card-head"><span class="card-title">% Conformidade por Empresa</span><span class="card-tag">Meta ≥ 90%</span></div>
-        <p style="font-size:11px;color:#64748B;margin:-12px 0 14px;line-height:1.5">Percentual de auditorias <strong>sem não conformidade</strong> por empresa no período selecionado. Verde ≥ 90% · Amarelo ≥ 75% · Vermelho &lt; 75%.</p>
+        <div class="card-head"><span class="card-title">Índice de Qualidade por Empresa</span><span class="card-tag">Meta ≥ 90%</span></div>
+        <p style="font-size:11px;color:#64748B;margin:-12px 0 14px;line-height:1.5">Começa em <strong>100%</strong> e desconta pontos por desvio encontrado, ponderado pela criticidade. Verde ≥ 90% · Amarelo ≥ 75% · Vermelho &lt; 75%.</p>
         <div style="position:relative;height:160px"><canvas id="cBarras"></canvas></div>
       </div>
       <div class="card" style="animation-delay:0.15s">
@@ -332,7 +332,7 @@ canvas { display: block; }
   <div class="page" id="page-evolucao">
     <div class="card">
       <div class="card-head"><span class="card-title">Evolução da Conformidade por Mês</span><span class="card-tag">por empresa</span></div>
-      <p style="font-size:11px;color:#64748B;margin:-12px 0 14px;line-height:1.5">Mostra como a <strong>% de conformidade de cada empresa variou mês a mês</strong>, considerando sempre o histórico completo da planilha (independente do filtro de período).</p>
+      <p style="font-size:11px;color:#64748B;margin:-12px 0 14px;line-height:1.5">Mostra como o <strong>Índice de Qualidade de cada empresa variou mês a mês</strong>, considerando o histórico completo da planilha. Queda no índice indica aumento de desvios.</p>
       <div style="position:relative;height:200px"><canvas id="cLinha"></canvas></div>
     </div>
   </div>
@@ -343,12 +343,12 @@ canvas { display: block; }
     <div class="grid-equal">
       <div class="card">
         <div class="card-head"><span class="card-title">🏅 Ranking de Conformidade</span></div>
-        <p style="font-size:11px;color:#64748B;margin:-12px 0 14px;line-height:1.5">Empresas ordenadas da <strong>maior para a menor conformidade</strong> no período selecionado. A barra reflete a % de auditorias sem NC.</p>
+        <p style="font-size:11px;color:#64748B;margin:-12px 0 14px;line-height:1.5">Empresas ordenadas do <strong>maior para o menor Índice de Qualidade</strong> no período. Maior índice = menos desvios encontrados nas APRs.</p>
         <div class="rank-list" id="rankList"></div>
       </div>
       <div class="card">
-        <div class="card-head"><span class="card-title">Nota Média por Empresa</span></div>
-        <p style="font-size:11px;color:#64748B;margin:-12px 0 14px;line-height:1.5"><strong>Média da nota geral (0–10)</strong> atribuída pelo auditor em cada APR. Reflete a qualidade percebida do documento, independente da conformidade.</p>
+        <div class="card-head"><span class="card-title">Índice Médio por Empresa</span></div>
+        <p style="font-size:11px;color:#64748B;margin:-12px 0 14px;line-height:1.5"><strong>Média do Índice de Qualidade (0–100%)</strong> por empresa. Calculado com pesos por criticidade — itens de risco e controle valem 3×.</p>
         <div style="position:relative;height:220px"><canvas id="cNota"></canvas></div>
       </div>
     </div>
@@ -364,7 +364,7 @@ canvas { display: block; }
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Data</th><th>Empresa</th><th>APR / Atividade</th><th>Técnico</th><th>Nota</th><th>Conformidade</th><th>NC</th></tr></thead>
+          <thead><tr><th>Data</th><th>Empresa</th><th>APR / Atividade</th><th>Técnico</th><th>Índice</th><th>NC</th></tr></thead>
           <tbody id="tbodyRegistros"></tbody>
         </table>
       </div>
@@ -378,16 +378,51 @@ canvas { display: block; }
 
 <script>
 // ── CONSTANTES ──────────────────────────────────────────────────────────────
-const EMPRESAS = ["Fagundes VL","Fagundes VLN","GHB","Hexágono","Preserves"];
+const EMPRESAS = ["FAGUNDES VL","FAGUNDES VLN","GHB","HEXÁGONO","PRESERVES"];
 const CORES = {
-  "Fagundes VL": "#1B6B2E","Fagundes VLN":"#16A34A",
-  "GHB":"#D97706","Hexágono":"#1D4ED8","Preserves":"#DC2626"
+  "FAGUNDES VL": "#1B6B2E","FAGUNDES VLN":"#16A34A",
+  "GHB":"#D97706","HEXÁGONO":"#1D4ED8","PRESERVES":"#DC2626"
 };
 const PAGE_TITLES = { visao:"Visão Geral", evolucao:"Evolução", ranking:"Ranking", registros:"Registros" };
 
 // ── CONFIGURAÇÃO FIXA ────────────────────────────────────────────────────────
 const SHEET_ID = '122xNMzW3psphv8Dh-xMpJLNz3pckebx-yql6VjfZlLg';
-const COL = { emp:'B', data:'D', nota:'P', nc:'S', atv:'E', tec:'C' };
+// Colunas da planilha (A=0, B=1, C=2...)
+const COL = { emp:'B', data:'D', atv:'E', tec:'C', nc:'S',
+  // Perguntas para cálculo ponderado:
+  g:'G', h:'H', i:'I', j:'J', k:'K', l:'L', m:'M', n:'N', o:'O'
+};
+
+// ── CÁLCULO DO ÍNDICE DE QUALIDADE (desconto de 100%) ──────────────────────
+// Pontua o DESVIO: resposta ruim = desconta pontos
+// Peso total possível = 12 pontos
+// G=identificação: pontua se NÃO (peso 1)
+// H=data preenchida: pontua se NÃO (peso 1)
+// I=equipe listada: pontua se NÃO (peso 1)
+// J=riscos identificados: pontua se NÃO (peso 3) ← crítico
+// K=riscos compatíveis: pontua se NÃO (peso 1)
+// L=controles definidos: pontua se NÃO (peso 3) ← crítico
+// M=controles específicos: pontua se SIM=genérico (peso 1)
+// N=APR clara: pontua se NÃO (peso 1)
+// O=foi copiada: pontua se SIM (peso 1)
+// (Evidência fotográfica e NC não entram no índice)
+const PESO_TOTAL = 12;
+function calcIndice(row, ci) {
+  const v = col => (row.c[ci(col)]?.v || '').toString().trim().toLowerCase();
+  const nao = col => v(col) === 'não' || v(col) === 'nao';
+  const sim = col => v(col) === 'sim';
+  let desvios = 0;
+  if (nao('G')) desvios += 1;
+  if (nao('H')) desvios += 1;
+  if (nao('I')) desvios += 1;
+  if (nao('J')) desvios += 3;
+  if (nao('K')) desvios += 1;
+  if (nao('L')) desvios += 3;
+  if (sim('M')) desvios += 1; // genérico = problema
+  if (nao('N')) desvios += 1;
+  if (sim('O')) desvios += 1; // copiada = problema
+  return Math.round((1 - desvios / PESO_TOTAL) * 100);
+}
 
 let ALL  = [];
 let FILT = [];
@@ -413,10 +448,10 @@ async function carregarDados() {
     const txt  = await res.text();
     const json = JSON.parse(txt.substring(47, txt.length - 2));
     const ci   = l => l ? l.charCodeAt(0) - 65 : -1;
-    const iE=ci(COL.emp), iD=ci(COL.data), iN=ci(COL.nota), iNC=ci(COL.nc), iA=ci(COL.atv), iT=ci(COL.tec);
+    const iE=ci(COL.emp), iD=ci(COL.data), iNC=ci(COL.nc), iA=ci(COL.atv), iT=ci(COL.tec);
     ALL = [];
     (json.table.rows || []).forEach(row => {
-      const emp = row.c[iE]?.v; if (!emp) return;
+      const emp = row.c[iE]?.v?.toString().trim(); if (!emp) return;
       const dv  = row.c[iD]?.v;
       const df  = row.c[iD]?.f;
       let dt = new Date();
@@ -429,7 +464,8 @@ async function carregarDados() {
         const p = dv.split('/');
         dt = p.length === 3 ? new Date(+p[2], +p[1]-1, +p[0]) : new Date(dv);
       }
-      ALL.push({ empresa:emp, data:dt, nota:row.c[iN]?.v??null, nc:(row.c[iNC]?.v||'Não')+'', atividade:row.c[iA]?.v||'—', tecnico:row.c[iT]?.v||'—' });
+      const indice = calcIndice(row, ci);
+      ALL.push({ empresa:emp, data:dt, nota:indice, nc:(row.c[iNC]?.v||'Não')+'', atividade:row.c[iA]?.v||'—', tecnico:row.c[iT]?.v||'—' });
     });
     setStatus(ALL.length > 0 ? 'live' : 'empty');
     aplicarFiltros();
@@ -465,18 +501,18 @@ function setStatus(s) {
 
 function getDemoData() {
   return [
-    {empresa:"GHB",          data:new Date("2026-04-01"), atividade:"Trabalho em altura",  tecnico:"Ana Lima",    nota:6,  nc:"Sim"},
-    {empresa:"Preserves",    data:new Date("2026-04-02"), atividade:"Op. de veículos",      tecnico:"Carlos Mota", nota:5,  nc:"Sim"},
-    {empresa:"Fagundes VL",  data:new Date("2026-04-03"), atividade:"Manutenção elétrica",  tecnico:"Ana Lima",    nota:9,  nc:"Não"},
-    {empresa:"Hexágono",     data:new Date("2026-04-04"), atividade:"Escavação",            tecnico:"João Silva",  nota:10, nc:"Não"},
-    {empresa:"Fagundes VLN", data:new Date("2026-04-05"), atividade:"Içamento de cargas",   tecnico:"Carlos Mota", nota:8,  nc:"Não"},
-    {empresa:"GHB",          data:new Date("2026-03-15"), atividade:"Trabalho em altura",   tecnico:"João Silva",  nota:7,  nc:"Sim"},
-    {empresa:"Preserves",    data:new Date("2026-03-20"), atividade:"Soldagem",             tecnico:"Ana Lima",    nota:5,  nc:"Sim"},
-    {empresa:"Fagundes VL",  data:new Date("2026-03-10"), atividade:"Içamento",            tecnico:"João Silva",  nota:8,  nc:"Não"},
-    {empresa:"Hexágono",     data:new Date("2026-03-05"), atividade:"Escavação",            tecnico:"Ana Lima",    nota:9,  nc:"Não"},
-    {empresa:"GHB",          data:new Date("2026-02-20"), atividade:"Trabalho em altura",   tecnico:"Carlos Mota", nota:6,  nc:"Sim"},
-    {empresa:"Preserves",    data:new Date("2026-02-15"), atividade:"Manutenção mecânica",  tecnico:"João Silva",  nota:6,  nc:"Não"},
-    {empresa:"Fagundes VLN", data:new Date("2026-02-10"), atividade:"Escavação",            tecnico:"Ana Lima",    nota:9,  nc:"Não"},
+    {empresa:"GHB",           data:new Date("2026-04-01"), atividade:"Trabalho em altura",  tecnico:"Ana Lima",    nota:58,  nc:"Sim"},
+    {empresa:"PRESERVES",     data:new Date("2026-04-02"), atividade:"Op. de veículos",      tecnico:"Carlos Mota", nota:42,  nc:"Sim"},
+    {empresa:"FAGUNDES VL",   data:new Date("2026-04-03"), atividade:"Manutenção elétrica",  tecnico:"Ana Lima",    nota:92,  nc:"Não"},
+    {empresa:"HEXÁGONO",      data:new Date("2026-04-04"), atividade:"Escavação",            tecnico:"João Silva",  nota:100, nc:"Não"},
+    {empresa:"FAGUNDES VLN",  data:new Date("2026-04-05"), atividade:"Içamento de cargas",   tecnico:"Carlos Mota", nota:83,  nc:"Não"},
+    {empresa:"GHB",           data:new Date("2026-03-15"), atividade:"Trabalho em altura",   tecnico:"João Silva",  nota:67,  nc:"Sim"},
+    {empresa:"PRESERVES",     data:new Date("2026-03-20"), atividade:"Soldagem",             tecnico:"Ana Lima",    nota:50,  nc:"Sim"},
+    {empresa:"FAGUNDES VL",   data:new Date("2026-03-10"), atividade:"Içamento",             tecnico:"João Silva",  nota:83,  nc:"Não"},
+    {empresa:"HEXÁGONO",      data:new Date("2026-03-05"), atividade:"Escavação",            tecnico:"Ana Lima",    nota:92,  nc:"Não"},
+    {empresa:"GHB",           data:new Date("2026-02-20"), atividade:"Trabalho em altura",   tecnico:"Carlos Mota", nota:58,  nc:"Sim"},
+    {empresa:"PRESERVES",     data:new Date("2026-02-15"), atividade:"Manutenção mecânica",  tecnico:"João Silva",  nota:75,  nc:"Não"},
+    {empresa:"FAGUNDES VLN",  data:new Date("2026-02-10"), atividade:"Escavação",            tecnico:"Ana Lima",    nota:92,  nc:"Não"},
   ];
 }
 
@@ -606,8 +642,8 @@ function renderNota(emps, pe) {
       backgroundColor:emps.map(e=>(CORES[e]||'#888')+'BB'),
       borderColor:emps.map(e=>CORES[e]||'#888'), borderWidth:2, borderRadius:8 }] },
     options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` Nota: ${c.raw}/10`}}},
-      scales:{ y:{min:0,max:10,grid:{color:'#F1F5F9'},ticks:{font:{family:'Outfit',size:12}}},
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` Índice: ${c.raw}%`}}},
+      scales:{ y:{min:0,max:100,grid:{color:'#F1F5F9'},ticks:{callback:v=>v+'%',font:{family:'Outfit',size:12}}},
                x:{grid:{display:false},ticks:{font:{family:'Outfit',size:12}}} }, animation:{duration:700} }
   });
 }
@@ -618,17 +654,16 @@ function renderTable(dados) {
   document.getElementById('tbodyRegistros').innerHTML = sorted.length ? sorted.map(r=>{
     const isNC = r.nc.toLowerCase()==='sim';
     const n = r.nota!==null?+r.nota:null;
-    const nc = n!==null?(n>=8?'#16A34A':n>=6?'#D97706':'#DC2626'):'#64748B';
+    const cor = n!==null?(n>=90?'#16A34A':n>=75?'#D97706':'#DC2626'):'#64748B';
     return `<tr>
       <td>${r.data.toLocaleDateString('pt-BR')}</td>
       <td><div class="emp-cell"><span class="emp-dot" style="background:${CORES[r.empresa]||'#888'}"></span>${r.empresa}</div></td>
       <td>${r.atividade}</td>
       <td>${r.tecnico}</td>
-      <td><span class="nota-num" style="color:${nc}">${n!==null?n+'/10':'—'}</span></td>
-      <td><span class="badge ${isNC?'b-critico':'b-bom'}">${isNC?'Não Conforme':'Conforme'}</span></td>
+      <td><span class="nota-num" style="color:${cor}">${n!==null?n+'%':'—'}</span></td>
       <td><span class="badge ${isNC?'b-nc':'b-ok'}">${isNC?'⚠ NC':'✓ OK'}</span></td>
     </tr>`;
-  }).join('') : `<tr><td colspan="7"><div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Sem registros no período selecionado</div></div></td></tr>`;
+  }).join('') : `<tr><td colspan="6"><div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Sem registros no período selecionado</div></div></td></tr>`;
 }
 
 // ── NAV ──────────────────────────────────────────────────────────────────────
