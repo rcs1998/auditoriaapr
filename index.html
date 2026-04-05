@@ -161,7 +161,7 @@ content: ‘’; position: absolute; top: 0; left: 0; right: 0; height: 4px;
 
 .card {
 background: var(–white); border-radius: var(–radius); padding: 18px 20px;
-box-shadow: var(–shadow-sm); animation: up 0.4s ease both;
+box-shadow: var(–shadow-sm); animation: up 0.4s ease both; overflow: hidden;
 }
 .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .card-title { font-size: 14px; font-weight: 700; color: var(–slate900); }
@@ -233,6 +233,13 @@ font-size: 15px; font-weight: 800; cursor: pointer; transition: background 0.15s
 .step-n { width: 22px; height: 22px; border-radius: 50%; background: var(–g700); color: #fff;
 font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
 code { font-family: var(–mono); font-size: 12px; background: var(–g50); color: var(–g700); padding: 1px 6px; border-radius: 4px; }
+
+/* ── CHARTS HEIGHT ── */
+#cBarras { height: 160px !important; }
+#cNC     { height: 160px !important; }
+#cLinha  { height: 200px !important; }
+#cNota   { height: 220px !important; }
+canvas   { display: block; }
 
 /* ── EMPTY STATE ── */
 .empty { text-align: center; padding: 48px 20px; color: var(–slate500); }
@@ -570,7 +577,8 @@ function renderBarras(emps, conf) {
     data:{ labels:emps, datasets:[{ data:emps.map(e=>conf[e]),
       backgroundColor:emps.map(e=>corConf(conf[e])+'CC'),
       borderColor:emps.map(e=>corConf(conf[e])), borderWidth:2, borderRadius:8 }] },
-    options:{ plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.raw}%`}}},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.raw}%`}}},
       scales:{ y:{min:0,max:100,grid:{color:'#F1F5F9'},ticks:{callback:v=>v+'%',font:{family:'Outfit',size:12}}},
                x:{grid:{display:false},ticks:{font:{family:'Outfit',size:12}}} }, animation:{duration:700} }
   });
@@ -582,7 +590,8 @@ function renderNC(emps, pe) {
     type:'doughnut',
     data:{ labels:emps, datasets:[{ data:emps.map(e=>pe[e].nc||0),
       backgroundColor:emps.map(e=>CORES[e]||'#888'), borderWidth:3, borderColor:'#fff' }] },
-    options:{ plugins:{ legend:{position:'bottom',labels:{font:{family:'Outfit',size:11},padding:10}},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom',labels:{font:{family:'Outfit',size:11},padding:10}},
       tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} NC`}} }, animation:{duration:700} }
   });
 }
@@ -606,7 +615,8 @@ function renderLinha(pe) {
       pointBackgroundColor:CORES[emp]||'#888', borderWidth:2.5, pointRadius:4, tension:0.3, spanGaps:true,
       data:keys.map(k=>{ const d=meses[k].d[emp]; return d&&d.t?Math.round((d.t-d.nc)/d.t*100):null; })
     })) },
-    options:{ plugins:{legend:{position:'bottom',labels:{font:{family:'Outfit',size:11},padding:12}},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{font:{family:'Outfit',size:11},padding:12}},
       tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.raw}%`}}},
       scales:{ y:{min:0,max:100,grid:{color:'#F1F5F9'},ticks:{callback:v=>v+'%',font:{family:'Outfit',size:12}}},
                x:{grid:{display:false},ticks:{font:{family:'Outfit',size:12}}} }, animation:{duration:700} }
@@ -639,7 +649,8 @@ function renderNota(emps, pe) {
     data:{ labels:emps, datasets:[{ data:notas,
       backgroundColor:emps.map(e=>(CORES[e]||'#888')+'BB'),
       borderColor:emps.map(e=>CORES[e]||'#888'), borderWidth:2, borderRadius:8 }] },
-    options:{ plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` Nota: ${c.raw}/10`}}},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` Nota: ${c.raw}/10`}}},
       scales:{ y:{min:0,max:10,grid:{color:'#F1F5F9'},ticks:{font:{family:'Outfit',size:12}}},
                x:{grid:{display:false},ticks:{font:{family:'Outfit',size:12}}} }, animation:{duration:700} }
   });
