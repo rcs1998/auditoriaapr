@@ -5,7 +5,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard — Auditoria de APR</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
@@ -32,7 +34,7 @@
 - { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-font-family: ‘DM Sans’, sans-serif;
+font-family: ‘DM Sans’, ‘Segoe UI’, Tahoma, Geneva, sans-serif;
 background: var(–bg);
 color: var(–text);
 min-height: 100vh;
@@ -586,8 +588,16 @@ async function carregarDados() {
       });
     });
 
+    // Connected successfully - hide demo banner regardless of row count
     document.getElementById('alertBanner').classList.add('hidden');
-    document.getElementById('lastUpdate').innerHTML = `<div class="dot-live"></div><span>Atualizado agora</span>`;
+    if (todosRegistros.length === 0) {
+      document.getElementById('alertBanner').classList.remove('hidden');
+      document.getElementById('alertMsg').textContent = 'Planilha conectada com sucesso! Nenhuma auditoria registrada ainda. Preencha o formulário para ver os dados aqui.';
+      document.getElementById('alertBanner').style.background = 'var(--green-light)';
+      document.getElementById('alertBanner').style.borderColor = '#A5D6A7';
+      document.getElementById('alertBanner').style.color = 'var(--green)';
+    }
+    document.getElementById('lastUpdate').innerHTML = `<div class="dot-live"></div><span>Conectado · ${new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}</span>`;
     aplicarFiltros();
   } catch(e) {
     console.warn('Erro ao carregar Sheets, usando demo:', e);
