@@ -316,10 +316,12 @@ canvas { display: block; }
     <div class="grid-2">
       <div class="card" style="animation-delay:0.1s">
         <div class="card-head"><span class="card-title">% Conformidade por Empresa</span><span class="card-tag">Meta ≥ 90%</span></div>
+        <p style="font-size:11px;color:#64748B;margin:-12px 0 14px;line-height:1.5">Percentual de auditorias <strong>sem não conformidade</strong> por empresa no período selecionado. Verde ≥ 90% · Amarelo ≥ 75% · Vermelho &lt; 75%.</p>
         <div style="position:relative;height:160px"><canvas id="cBarras"></canvas></div>
       </div>
       <div class="card" style="animation-delay:0.15s">
         <div class="card-head"><span class="card-title">Não Conformidades</span></div>
+        <p style="font-size:11px;color:#64748B;margin:-12px 0 14px;line-height:1.5">Distribuição do <strong>total de NCs</strong> entre as empresas. Cada fatia mostra quantas auditorias tiveram pelo menos 1 NC registrada.</p>
         <div style="position:relative;height:160px"><canvas id="cNC"></canvas></div>
       </div>
     </div>
@@ -330,6 +332,7 @@ canvas { display: block; }
   <div class="page" id="page-evolucao">
     <div class="card">
       <div class="card-head"><span class="card-title">Evolução da Conformidade por Mês</span><span class="card-tag">por empresa</span></div>
+      <p style="font-size:11px;color:#64748B;margin:-12px 0 14px;line-height:1.5">Mostra como a <strong>% de conformidade de cada empresa variou mês a mês</strong>, considerando sempre o histórico completo da planilha (independente do filtro de período).</p>
       <div style="position:relative;height:200px"><canvas id="cLinha"></canvas></div>
     </div>
   </div>
@@ -340,10 +343,12 @@ canvas { display: block; }
     <div class="grid-equal">
       <div class="card">
         <div class="card-head"><span class="card-title">🏅 Ranking de Conformidade</span></div>
+        <p style="font-size:11px;color:#64748B;margin:-12px 0 14px;line-height:1.5">Empresas ordenadas da <strong>maior para a menor conformidade</strong> no período selecionado. A barra reflete a % de auditorias sem NC.</p>
         <div class="rank-list" id="rankList"></div>
       </div>
       <div class="card">
         <div class="card-head"><span class="card-title">Nota Média por Empresa</span></div>
+        <p style="font-size:11px;color:#64748B;margin:-12px 0 14px;line-height:1.5"><strong>Média da nota geral (0–10)</strong> atribuída pelo auditor em cada APR. Reflete a qualidade percebida do documento, independente da conformidade.</p>
         <div style="position:relative;height:220px"><canvas id="cNota"></canvas></div>
       </div>
     </div>
@@ -413,9 +418,17 @@ async function carregarDados() {
     (json.table.rows || []).forEach(row => {
       const emp = row.c[iE]?.v; if (!emp) return;
       const dv  = row.c[iD]?.v;
+      const df  = row.c[iD]?.f;
       let dt = new Date();
-      if (typeof dv === 'string') dt = new Date(dv);
-      else if (dv?.f) { const p=dv.f.split('/'); dt=new Date(+p[2],+p[1]-1,+p[0]); }
+      if (df && /\d{2}\/\d{2}\/\d{4}/.test(df)) {
+        const p = df.split('/'); dt = new Date(+p[2], +p[1]-1, +p[0]);
+      } else if (typeof dv === 'string' && dv.startsWith('Date(')) {
+        const parts = dv.replace('Date(','').replace(')','').split(',');
+        dt = new Date(+parts[0], +parts[1], +parts[2]);
+      } else if (typeof dv === 'string' && dv) {
+        const p = dv.split('/');
+        dt = p.length === 3 ? new Date(+p[2], +p[1]-1, +p[0]) : new Date(dv);
+      }
       ALL.push({ empresa:emp, data:dt, nota:row.c[iN]?.v??null, nc:(row.c[iNC]?.v||'Não')+'', atividade:row.c[iA]?.v||'—', tecnico:row.c[iT]?.v||'—' });
     });
     setStatus(ALL.length > 0 ? 'live' : 'empty');
