@@ -235,11 +235,7 @@ font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-c
 code { font-family: var(–mono); font-size: 12px; background: var(–g50); color: var(–g700); padding: 1px 6px; border-radius: 4px; }
 
 /* ── CHARTS HEIGHT ── */
-#cBarras { height: 160px !important; }
-#cNC     { height: 160px !important; }
-#cLinha  { height: 200px !important; }
-#cNota   { height: 220px !important; }
-canvas   { display: block; }
+canvas { display: block; }
 
 /* ── EMPTY STATE ── */
 .empty { text-align: center; padding: 48px 20px; color: var(–slate500); }
@@ -274,7 +270,6 @@ canvas   { display: block; }
     <button class="nav-btn" onclick="goPage('evolucao',this)"><span class="nav-icon">📈</span><span>Evolução</span></button>
     <button class="nav-btn" onclick="goPage('ranking',this)"><span class="nav-icon">🏅</span><span>Ranking</span></button>
     <button class="nav-btn" onclick="goPage('registros',this)"><span class="nav-icon">📋</span><span>Registros</span></button>
-    <button class="nav-btn" onclick="goPage('config',this)"><span class="nav-icon">⚙️</span><span>Configurar</span></button>
   </nav>
   <div class="sidebar-bottom">
     <div class="status-pill">
@@ -321,11 +316,11 @@ canvas   { display: block; }
     <div class="grid-2">
       <div class="card" style="animation-delay:0.1s">
         <div class="card-head"><span class="card-title">% Conformidade por Empresa</span><span class="card-tag">Meta ≥ 90%</span></div>
-        <canvas id="cBarras" height="160"></canvas>
+        <div style="position:relative;height:160px"><canvas id="cBarras"></canvas></div>
       </div>
       <div class="card" style="animation-delay:0.15s">
         <div class="card-head"><span class="card-title">Não Conformidades</span></div>
-        <canvas id="cNC" height="160"></canvas>
+        <div style="position:relative;height:160px"><canvas id="cNC"></canvas></div>
       </div>
     </div>
   </div>
@@ -335,7 +330,7 @@ canvas   { display: block; }
   <div class="page" id="page-evolucao">
     <div class="card">
       <div class="card-head"><span class="card-title">Evolução da Conformidade por Mês</span><span class="card-tag">por empresa</span></div>
-      <canvas id="cLinha" height="200"></canvas>
+      <div style="position:relative;height:200px"><canvas id="cLinha"></canvas></div>
     </div>
   </div>
 
@@ -349,7 +344,7 @@ canvas   { display: block; }
       </div>
       <div class="card">
         <div class="card-head"><span class="card-title">Nota Média por Empresa</span></div>
-        <canvas id="cNota" height="220"></canvas>
+        <div style="position:relative;height:220px"><canvas id="cNota"></canvas></div>
       </div>
     </div>
   </div>
@@ -371,34 +366,7 @@ canvas   { display: block; }
     </div>
   </div>
 
-  <!-- PAGE: CONFIG -->
 
-  <div class="page" id="page-config">
-    <div class="config-wrap">
-      <div class="config-card">
-        <div class="config-h">⚙️ Conectar ao Google Sheets</div>
-        <div class="config-p">Cole o ID da sua planilha abaixo e informe a letra de cada coluna conforme está na aba <strong>Base</strong>.</div>
-        <div class="field"><label>ID da Planilha</label><input id="cfgId" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"/></div>
-        <div class="fields-grid">
-          <div class="field"><label>Coluna Empresa</label><input id="cfgEmp" placeholder="B" maxlength="2"/></div>
-          <div class="field"><label>Coluna Data Auditoria</label><input id="cfgData" placeholder="D" maxlength="2"/></div>
-          <div class="field"><label>Coluna Nota (0–10)</label><input id="cfgNota" placeholder="Ex: P" maxlength="2"/></div>
-          <div class="field"><label>Coluna Não Conformidade</label><input id="cfgNC" placeholder="Ex: S" maxlength="2"/></div>
-          <div class="field"><label>Coluna APR / Atividade</label><input id="cfgAtv" placeholder="Ex: E" maxlength="2"/></div>
-          <div class="field"><label>Coluna Técnico</label><input id="cfgTec" placeholder="Ex: C" maxlength="2"/></div>
-        </div>
-        <button class="btn-save" onclick="salvarConfig()">💾 Salvar e Carregar Dados</button>
-      </div>
-      <div class="howto">
-        <div class="howto-title">Como encontrar o ID da planilha</div>
-        <div class="step"><div class="step-n">1</div><div>Abra a planilha no Google Sheets.</div></div>
-        <div class="step"><div class="step-n">2</div><div>Veja a URL: <code>docs.google.com/spreadsheets/d/<strong>ID_AQUI</strong>/edit</code></div></div>
-        <div class="step"><div class="step-n">3</div><div>Copie o trecho entre <code>/d/</code> e <code>/edit</code>.</div></div>
-        <div class="step"><div class="step-n">4</div><div>A planilha precisa estar com acesso: <strong>Qualquer pessoa com o link pode visualizar</strong>.</div></div>
-        <div class="step"><div class="step-n">5</div><div>Clique em Salvar e aguarde o dashboard atualizar.</div></div>
-      </div>
-    </div>
-  </div>
 
 </div><!-- /main-area -->
 </div><!-- /layout -->
@@ -410,16 +378,18 @@ const CORES = {
   "Fagundes VL": "#1B6B2E","Fagundes VLN":"#16A34A",
   "GHB":"#D97706","Hexágono":"#1D4ED8","Preserves":"#DC2626"
 };
-const PAGE_TITLES = { visao:"Visão Geral", evolucao:"Evolução", ranking:"Ranking", registros:"Registros", config:"Configurar" };
+const PAGE_TITLES = { visao:"Visão Geral", evolucao:"Evolução", ranking:"Ranking", registros:"Registros" };
 
-let CFG  = JSON.parse(localStorage.getItem('aprCfg') || '{}');
+// ── CONFIGURAÇÃO FIXA ────────────────────────────────────────────────────────
+const SHEET_ID = '122xNMzW3psphv8Dh-xMpJLNz3pckebx-yql6VjfZlLg';
+const COL = { emp:'B', data:'D', nota:'P', nc:'S', atv:'E', tec:'C' };
+
 let ALL  = [];
 let FILT = [];
 let CHARTS = {};
 
 // ── INIT ────────────────────────────────────────────────────────────────────
 window.onload = () => {
-  loadCfgUI();
   EMPRESAS.forEach(e => {
     const o = document.createElement('option');
     o.value = e; o.textContent = e;
@@ -428,38 +398,17 @@ window.onload = () => {
   carregarDados();
 };
 
-function loadCfgUI() {
-  const m = { cfgId:'sheetId', cfgEmp:'colEmp', cfgData:'colData', cfgNota:'colNota', cfgNC:'colNC', cfgAtv:'colAtv', cfgTec:'colTec' };
-  Object.entries(m).forEach(([id, key]) => { if(CFG[key]) document.getElementById(id).value = CFG[key]; });
-}
-
-function salvarConfig() {
-  CFG = {
-    sheetId: document.getElementById('cfgId').value.trim(),
-    colEmp:  document.getElementById('cfgEmp').value.trim().toUpperCase(),
-    colData: document.getElementById('cfgData').value.trim().toUpperCase(),
-    colNota: document.getElementById('cfgNota').value.trim().toUpperCase(),
-    colNC:   document.getElementById('cfgNC').value.trim().toUpperCase(),
-    colAtv:  document.getElementById('cfgAtv').value.trim().toUpperCase(),
-    colTec:  document.getElementById('cfgTec').value.trim().toUpperCase(),
-  };
-  localStorage.setItem('aprCfg', JSON.stringify(CFG));
-  goPage('visao', document.querySelector('.nav-btn'));
-  carregarDados();
-}
-
 // ── DADOS ────────────────────────────────────────────────────────────────────
 async function carregarDados() {
   setStatus('loading');
-  if (!CFG.sheetId) { setStatus('demo'); return; }
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${CFG.sheetId}/gviz/tq?tqx=out:json&sheet=Base`;
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Base`;
     const res  = await fetch(url);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const txt  = await res.text();
     const json = JSON.parse(txt.substring(47, txt.length - 2));
     const ci   = l => l ? l.charCodeAt(0) - 65 : -1;
-    const iE=ci(CFG.colEmp), iD=ci(CFG.colData), iN=ci(CFG.colNota), iNC=ci(CFG.colNC), iA=ci(CFG.colAtv), iT=ci(CFG.colTec);
+    const iE=ci(COL.emp), iD=ci(COL.data), iN=ci(COL.nota), iNC=ci(COL.nc), iA=ci(COL.atv), iT=ci(COL.tec);
     ALL = [];
     (json.table.rows || []).forEach(row => {
       const emp = row.c[iE]?.v; if (!emp) return;
@@ -489,18 +438,12 @@ function setStatus(s) {
   } else if (s === 'empty') {
     txt.textContent = 'Conectado';
     ban.className = 'alert alert-success';
-    msg.textContent = '✅ Planilha conectada com sucesso! Nenhuma auditoria registrada ainda. Preencha o formulário para ver os dados aqui.';
-  } else if (s === 'demo') {
-    dot.className = 'dot-live dot-demo';
-    txt.textContent = 'Demonstração';
-    ban.className = 'alert alert-info';
-    msg.textContent = 'Configure a planilha em ⚙️ Configurar para carregar dados reais. Mostrando demonstração.';
-    ALL = getDemoData(); aplicarFiltros();
+    msg.textContent = '✅ Planilha conectada com sucesso! Nenhuma auditoria registrada ainda.';
   } else if (s === 'error') {
     dot.className = 'dot-live dot-demo';
     txt.textContent = 'Erro';
     ban.className = 'alert alert-info';
-    msg.textContent = '⚠️ Não foi possível carregar a planilha. Verifique o ID e se ela está com acesso público.';
+    msg.textContent = '⚠️ Não foi possível carregar a planilha. Verifique se ela está com acesso público (qualquer pessoa com o link pode visualizar).';
     ALL = getDemoData(); aplicarFiltros();
   } else {
     txt.textContent = 'Carregando...';
