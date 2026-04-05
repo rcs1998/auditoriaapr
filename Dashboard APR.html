@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Auditoria de APR</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --green:        #1B6B2E;
+    --green-mid:    #2E9E4F;
+    --green-light:  #E8F5E9;
+    --green-pale:   #F2F8F3;
+    --red:          #C62828;
+    --red-light:    #FFEBEE;
+    --yellow:       #F59E0B;
+    --yellow-light: #FFFBEB;
+    --blue:         #1565C0;
+    --blue-light:   #E3F2FD;
+    --dark:         #0F1A12;
+    --text:         #1C2B1F;
+    --muted:        #6B7C6E;
+    --border:       #D8E8DB;
+    --bg:           #F0F5F1;
+    --card:         #FFFFFF;
+    --shadow:       0 2px 16px rgba(27,107,46,0.08);
+    --shadow-lg:    0 8px 40px rgba(27,107,46,0.13);
+  }
+
+- { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+font-family: ‘DM Sans’, sans-serif;
+background: var(–bg);
+color: var(–text);
+min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.header {
+background: var(–green);
+padding: 0 32px;
+display: flex;
+align-items: center;
+gap: 20px;
+height: 64px;
+box-shadow: 0 2px 20px rgba(0,0,0,0.18);
+position: sticky; top: 0; z-index: 100;
+}
+.header-icon {
+width: 36px; height: 36px;
+background: rgba(255,255,255,0.15);
+border-radius: 8px;
+display: flex; align-items: center; justify-content: center;
+font-size: 18px;
+}
+.header-title { color: #fff; font-weight: 800; font-size: 16px; letter-spacing: 0.2px; }
+.header-sub { color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 1px; }
+.header-badge {
+margin-left: auto;
+background: rgba(255,255,255,0.12);
+border: 1px solid rgba(255,255,255,0.2);
+color: rgba(255,255,255,0.85);
+font-size: 12px; font-weight: 500;
+padding: 5px 14px; border-radius: 99px;
+display: flex; align-items: center; gap: 6px;
+}
+.dot-live {
+width: 7px; height: 7px; border-radius: 50%;
+background: #4ADE80;
+box-shadow: 0 0 0 2px rgba(74,222,128,0.3);
+animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+/* ── TOOLBAR ── */
+.toolbar {
+background: var(–card);
+border-bottom: 1.5px solid var(–border);
+padding: 0 32px;
+display: flex; align-items: center; gap: 8px; height: 52px;
+}
+.tab-btn {
+padding: 6px 18px; border: none; background: none; cursor: pointer;
+font-family: ‘DM Sans’, sans-serif; font-size: 13px; font-weight: 600;
+color: var(–muted); border-radius: 6px; transition: all 0.15s;
+border-bottom: 2.5px solid transparent; height: 100%;
+}
+.tab-btn:hover { color: var(–green); background: var(–green-light); }
+.tab-btn.active { color: var(–green); border-bottom-color: var(–green); background: none; }
+
+.toolbar-right {
+margin-left: auto; display: flex; align-items: center; gap: 10px;
+}
+.filter-group { display: flex; align-items: center; gap: 6px; }
+.filter-label { font-size: 12px; color: var(–muted); font-weight: 500; }
+select, .btn-refresh {
+font-family: ‘DM Sans’, sans-serif; font-size: 13px; font-weight: 500;
+padding: 6px 12px; border-radius: 7px; cursor: pointer;
+border: 1.5px solid var(–border); color: var(–text);
+background: var(–bg); transition: all 0.15s; outline: none;
+}
+select:focus, select:hover { border-color: var(–green); }
+.btn-refresh {
+background: var(–green); color: #fff; border-color: var(–green);
+display: flex; align-items: center; gap: 6px;
+}
+.btn-refresh:hover { background: var(–green-mid); }
+
+/* ── MAIN ── */
+.main { padding: 28px 32px; max-width: 1200px; margin: 0 auto; }
+
+/* ── ALERT BANNER ── */
+.alert-banner {
+background: var(–blue-light); border: 1.5px solid #90CAF9;
+border-radius: 10px; padding: 12px 18px;
+display: flex; align-items: flex-start; gap: 10px;
+margin-bottom: 24px; font-size: 13px; color: var(–blue);
+font-weight: 500; line-height: 1.5;
+}
+.alert-banner.hidden { display: none; }
+
+/* ── KPI CARDS ── */
+.kpi-grid {
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+gap: 16px; margin-bottom: 24px;
+}
+.kpi-card {
+background: var(–card); border-radius: 12px; padding: 20px 22px;
+box-shadow: var(–shadow); border-left: 5px solid var(–green);
+animation: fadeUp 0.4s ease both;
+transition: transform 0.15s, box-shadow 0.15s;
+}
+.kpi-card:hover { transform: translateY(-2px); box-shadow: var(–shadow-lg); }
+.kpi-card:nth-child(1) { border-color: var(–green); animation-delay: 0s; }
+.kpi-card:nth-child(2) { border-color: var(–blue); animation-delay: 0.05s; }
+.kpi-card:nth-child(3) { border-color: var(–red); animation-delay: 0.1s; }
+.kpi-card:nth-child(4) { border-color: var(–yellow); animation-delay: 0.15s; }
+.kpi-icon { font-size: 22px; margin-bottom: 6px; }
+.kpi-label { font-size: 11px; font-weight: 700; color: var(–muted); text-transform: uppercase; letter-spacing: 0.6px; }
+.kpi-value { font-size: 34px; font-weight: 800; line-height: 1.1; margin: 4px 0 2px; }
+.kpi-sub { font-size: 12px; color: var(–muted); }
+.kpi-card:nth-child(1) .kpi-value { color: var(–green); }
+.kpi-card:nth-child(2) .kpi-value { color: var(–blue); }
+.kpi-card:nth-child(3) .kpi-value { color: var(–red); }
+.kpi-card:nth-child(4) .kpi-value { color: var(–yellow); }
+
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+
+/* ── CHARTS GRID ── */
+.charts-grid {
+display: grid; grid-template-columns: 2fr 1fr;
+gap: 18px; margin-bottom: 18px;
+}
+.charts-grid-2 {
+display: grid; grid-template-columns: 1fr 1fr;
+gap: 18px; margin-bottom: 18px;
+}
+.card {
+background: var(–card); border-radius: 12px; padding: 22px 24px;
+box-shadow: var(–shadow); animation: fadeUp 0.4s ease both;
+}
+.card-header {
+display: flex; align-items: center; justify-content: space-between;
+margin-bottom: 18px;
+}
+.card-title { font-size: 14px; font-weight: 700; color: var(–text); }
+.card-badge {
+font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px;
+background: var(–green-light); color: var(–green);
+}
+.chart-wrap { position: relative; }
+
+/* ── RANKING ── */
+.ranking-list { display: flex; flex-direction: column; gap: 12px; }
+.ranking-item { display: flex; align-items: center; gap: 12px; }
+.rank-pos { font-size: 18px; width: 28px; text-align: center; }
+.rank-info { flex: 1; }
+.rank-name { font-size: 13px; font-weight: 700; color: var(–text); margin-bottom: 5px; }
+.rank-bar-wrap { display: flex; align-items: center; gap: 8px; }
+.rank-bar-bg { flex: 1; height: 8px; background: #E8F0E9; border-radius: 99px; overflow: hidden; }
+.rank-bar-fill { height: 100%; border-radius: 99px; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+.rank-pct { font-size: 13px; font-weight: 800; min-width: 42px; text-align: right; }
+.rank-nc { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+
+/* ── TABLE ── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead tr { background: var(–green-pale); }
+th {
+padding: 11px 14px; text-align: left; font-size: 11px; font-weight: 700;
+color: var(–green); text-transform: uppercase; letter-spacing: 0.5px;
+border-bottom: 2px solid var(–border);
+}
+td { padding: 11px 14px; border-bottom: 1px solid var(–border); color: var(–text); vertical-align: middle; }
+tr:hover td { background: var(–green-pale); }
+.empresa-dot {
+display: inline-flex; align-items: center; gap: 7px; font-weight: 600;
+}
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.badge {
+padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 700;
+display: inline-block;
+}
+.badge-ok { background: var(–green-light); color: var(–green); }
+.badge-nc { background: var(–red-light); color: var(–red); }
+.badge-bom { background: var(–green-light); color: var(–green); }
+.badge-atencao { background: var(–yellow-light); color: #B45309; }
+.badge-critico { background: var(–red-light); color: var(–red); }
+.nota-val { font-weight: 800; font-size: 15px; }
+
+/* ── TAB CONTENT ── */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ── LOADING ── */
+.loading {
+text-align: center; padding: 60px 20px; color: var(–muted);
+display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.spinner {
+width: 36px; height: 36px; border: 3px solid var(–border);
+border-top-color: var(–green); border-radius: 50%;
+animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── CONFIG PANEL ── */
+.config-panel {
+background: var(–card); border-radius: 12px; padding: 28px 32px;
+box-shadow: var(–shadow); max-width: 640px;
+}
+.config-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.config-sub { font-size: 13px; color: var(–muted); margin-bottom: 24px; line-height: 1.6; }
+.config-field { margin-bottom: 18px; }
+.config-field label { display: block; font-size: 12px; font-weight: 700; color: var(–muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.config-field input, .config-field select {
+width: 100%; padding: 10px 14px; border-radius: 8px;
+border: 1.5px solid var(–border); font-family: ‘DM Mono’, monospace;
+font-size: 13px; color: var(–text); background: var(–bg);
+}
+.config-field input:focus { border-color: var(–green); outline: none; }
+.btn-primary {
+background: var(–green); color: #fff; border: none; border-radius: 8px;
+padding: 11px 24px; font-family: ‘DM Sans’, sans-serif; font-size: 14px;
+font-weight: 700; cursor: pointer; transition: background 0.15s;
+}
+.btn-primary:hover { background: var(–green-mid); }
+.config-steps { margin-top: 24px; padding-top: 20px; border-top: 1.5px solid var(–border); }
+.step { display: flex; gap: 12px; margin-bottom: 14px; font-size: 13px; line-height: 1.5; }
+.step-num {
+width: 22px; height: 22px; border-radius: 50%; background: var(–green);
+color: #fff; font-size: 11px; font-weight: 800; display: flex;
+align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+}
+code {
+font-family: ‘DM Mono’, monospace; background: var(–green-light);
+color: var(–green); padding: 1px 6px; border-radius: 4px; font-size: 12px;
+}
+
+@media (max-width: 768px) {
+.kpi-grid { grid-template-columns: 1fr 1fr; }
+.charts-grid, .charts-grid-2 { grid-template-columns: 1fr; }
+.main { padding: 16px; }
+.toolbar { padding: 0 16px; overflow-x: auto; }
+.header { padding: 0 16px; }
+}
+</style>
+
+</head>
+<body>
+
+<!-- HEADER -->
+
+<div class="header">
+  <div class="header-icon">🛡️</div>
+  <div>
+    <div class="header-title">Dashboard — Auditoria de APR Parceiros</div>
+    <div class="header-sub">Gestão de Segurança · Google Sheets</div>
+  </div>
+  <div class="header-badge" id="lastUpdate">
+    <div class="dot-live"></div>
+    <span>Aguardando dados...</span>
+  </div>
+</div>
+
+<!-- TOOLBAR -->
+
+<div class="toolbar">
+  <button class="tab-btn active" onclick="switchTab('visao', this)">📊 Visão Geral</button>
+  <button class="tab-btn" onclick="switchTab('evolucao', this)">📈 Evolução</button>
+  <button class="tab-btn" onclick="switchTab('ranking', this)">🏅 Ranking</button>
+  <button class="tab-btn" onclick="switchTab('registros', this)">📋 Registros</button>
+  <button class="tab-btn" onclick="switchTab('config', this)">⚙️ Configurar</button>
+
+  <div class="toolbar-right">
+    <div class="filter-group">
+      <span class="filter-label">Empresa:</span>
+      <select id="filtroEmpresa" onchange="aplicarFiltros()">
+        <option value="">Todas</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Período:</span>
+      <select id="filtroPeriodo" onchange="aplicarFiltros()">
+        <option value="">Todo período</option>
+        <option value="30">Últimos 30 dias</option>
+        <option value="90">Últimos 90 dias</option>
+        <option value="180">Últimos 6 meses</option>
+      </select>
+    </div>
+    <button class="btn-refresh" onclick="carregarDados()">↻ Atualizar</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ALERT -->
+
+  <div class="alert-banner" id="alertBanner">
+    ℹ️ <span id="alertMsg">Configure a planilha na aba ⚙️ Configurar para carregar os dados reais. Exibindo dados de demonstração.</span>
+  </div>
+
+  <!-- TAB: VISÃO GERAL -->
+
+  <div class="tab-content active" id="tab-visao">
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-icon">✅</div><div class="kpi-label">Conformidade Geral</div><div class="kpi-value" id="kpi-conf">—</div><div class="kpi-sub">média das empresas</div></div>
+      <div class="kpi-card"><div class="kpi-icon">📋</div><div class="kpi-label">Auditorias Realizadas</div><div class="kpi-value" id="kpi-aud">—</div><div class="kpi-sub">no período selecionado</div></div>
+      <div class="kpi-card"><div class="kpi-icon">⚠️</div><div class="kpi-label">Não Conformidades</div><div class="kpi-value" id="kpi-nc">—</div><div class="kpi-sub">requerem plano de ação</div></div>
+      <div class="kpi-card"><div class="kpi-icon">🏆</div><div class="kpi-label">Melhor Empresa</div><div class="kpi-value" id="kpi-melhor" style="font-size:18px;margin-top:8px">—</div><div class="kpi-sub" id="kpi-melhor-sub"></div></div>
+    </div>
+
+```
+<div class="charts-grid">
+  <div class="card" style="animation-delay:0.1s">
+    <div class="card-header">
+      <span class="card-title">% Conformidade por Empresa</span>
+      <span class="card-badge">Meta: 90%</span>
+    </div>
+    <div class="chart-wrap"><canvas id="chartBarras" height="220"></canvas></div>
+  </div>
+  <div class="card" style="animation-delay:0.15s">
+    <div class="card-header"><span class="card-title">Não Conformidades</span></div>
+    <div class="chart-wrap"><canvas id="chartNC" height="220"></canvas></div>
+  </div>
+</div>
+```
+
+  </div>
+
+  <!-- TAB: EVOLUÇÃO -->
+
+  <div class="tab-content" id="tab-evolucao">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Evolução da Conformidade ao Longo do Tempo</span>
+        <span class="card-badge">por mês</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chartLinha" height="300"></canvas></div>
+    </div>
+  </div>
+
+  <!-- TAB: RANKING -->
+
+  <div class="tab-content" id="tab-ranking">
+    <div class="charts-grid-2">
+      <div class="card">
+        <div class="card-header"><span class="card-title">🏅 Ranking de Conformidade</span></div>
+        <div class="ranking-list" id="rankingList"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Nota Média por Empresa</span></div>
+        <div class="chart-wrap"><canvas id="chartNota" height="260"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: REGISTROS -->
+
+  <div class="tab-content" id="tab-registros">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Registros de Auditoria</span>
+        <span class="card-badge" id="totalRegistros">0 registros</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Empresa</th>
+              <th>Atividade / APR</th>
+              <th>Técnico</th>
+              <th>Nota</th>
+              <th>Conformidade</th>
+              <th>Status NC</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaRegistros"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: CONFIG -->
+
+  <div class="tab-content" id="tab-config">
+    <div class="config-panel">
+      <div class="config-title">⚙️ Conectar ao Google Sheets</div>
+      <div class="config-sub">
+        Cole abaixo o ID da sua planilha do Google Sheets para o dashboard carregar os dados automaticamente. O ID fica na URL da planilha.
+      </div>
+
+```
+  <div class="config-field">
+    <label>ID da Planilha</label>
+    <input type="text" id="sheetId" placeholder="Ex: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" />
+  </div>
+
+  <div class="config-field">
+    <label>Coluna da Empresa (letra)</label>
+    <input type="text" id="colEmpresa" placeholder="B" value="B" maxlength="2"/>
+  </div>
+
+  <div class="config-field">
+    <label>Coluna da Data da Auditoria (letra)</label>
+    <input type="text" id="colData" placeholder="D" value="D" maxlength="2"/>
+  </div>
+
+  <div class="config-field">
+    <label>Coluna da Nota (letra)</label>
+    <input type="text" id="colNota" placeholder="Ex: P" maxlength="2"/>
+  </div>
+
+  <div class="config-field">
+    <label>Coluna "Existe não conformidade?" (letra)</label>
+    <input type="text" id="colNC" placeholder="Ex: S" maxlength="2"/>
+  </div>
+
+  <div class="config-field">
+    <label>Coluna do Número / Atividade da APR (letra)</label>
+    <input type="text" id="colAtividade" placeholder="Ex: E" value="E" maxlength="2"/>
+  </div>
+
+  <div class="config-field">
+    <label>Coluna do Técnico (letra)</label>
+    <input type="text" id="colTecnico" placeholder="Ex: C" value="C" maxlength="2"/>
+  </div>
+
+  <button class="btn-primary" onclick="salvarConfig()">💾 Salvar e Carregar Dados</button>
+
+  <div class="config-steps">
+    <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--muted)">COMO ENCONTRAR O ID DA PLANILHA</div>
+    <div class="step"><div class="step-num">1</div><div>Abra sua planilha no Google Sheets no navegador.</div></div>
+    <div class="step"><div class="step-num">2</div><div>Olhe a URL — ela tem o formato:<br><code>docs.google.com/spreadsheets/d/<strong>ID_AQUI</strong>/edit</code></div></div>
+    <div class="step"><div class="step-num">3</div><div>Copie o trecho entre <code>/d/</code> e <code>/edit</code> e cole no campo acima.</div></div>
+    <div class="step"><div class="step-num">4</div><div>A aba de respostas precisa estar com acesso público ou compartilhada com sua conta. Menu <code>Compartilhar</code> → qualquer pessoa com o link pode visualizar.</div></div>
+    <div class="step"><div class="step-num">5</div><div>Clique em <strong>Salvar e Carregar Dados</strong> e aguarde o dashboard atualizar.</div></div>
+  </div>
+</div>
+```
+
+  </div>
+
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const EMPRESAS = ["Fagundes VL","Fagundes VLN","GHB","Hexágono","Preserves"];
+const CORES_EMPRESA = {
+  "Fagundes VL":  "#1B6B2E",
+  "Fagundes VLN": "#2E9E4F",
+  "GHB":          "#F59E0B",
+  "Hexágono":     "#1565C0",
+  "Preserves":    "#E65100",
+};
+
+let CONFIG = JSON.parse(localStorage.getItem('aprDashConfig') || '{}');
+let todosRegistros = [];
+let registrosFiltrados = [];
+let charts = {};
+
+// ── DADOS DE DEMO ────────────────────────────────────────────────────────────
+const DEMO_DATA = [
+  { data: new Date("2026-04-01"), empresa:"GHB",          atividade:"Trabalho em altura",   tecnico:"Ana Lima",    nota:6,  nc:"Sim"  },
+  { data: new Date("2026-04-02"), empresa:"Preserves",    atividade:"Operação de veículos",  tecnico:"Carlos Mota", nota:5,  nc:"Sim"  },
+  { data: new Date("2026-04-03"), empresa:"Fagundes VL",  atividade:"Manutenção elétrica",   tecnico:"Ana Lima",    nota:9,  nc:"Não"  },
+  { data: new Date("2026-04-04"), empresa:"Hexágono",     atividade:"Escavação",             tecnico:"João Silva",  nota:10, nc:"Não"  },
+  { data: new Date("2026-04-05"), empresa:"Fagundes VLN", atividade:"Içamento de cargas",    tecnico:"Carlos Mota", nota:8,  nc:"Não"  },
+  { data: new Date("2026-03-15"), empresa:"GHB",          atividade:"Trabalho em altura",    tecnico:"João Silva",  nota:7,  nc:"Sim"  },
+  { data: new Date("2026-03-20"), empresa:"Preserves",    atividade:"Soldagem",              tecnico:"Ana Lima",    nota:5,  nc:"Sim"  },
+  { data: new Date("2026-03-10"), empresa:"Fagundes VL",  atividade:"Içamento",              tecnico:"João Silva",  nota:8,  nc:"Não"  },
+  { data: new Date("2026-03-05"), empresa:"Hexágono",     atividade:"Escavação",             tecnico:"Ana Lima",    nota:9,  nc:"Não"  },
+  { data: new Date("2026-02-20"), empresa:"GHB",          atividade:"Trabalho em altura",    tecnico:"Carlos Mota", nota:6,  nc:"Sim"  },
+  { data: new Date("2026-02-15"), empresa:"Preserves",    atividade:"Manutenção mecânica",   tecnico:"João Silva",  nota:6,  nc:"Não"  },
+  { data: new Date("2026-02-10"), empresa:"Fagundes VLN", atividade:"Escavação",             tecnico:"Ana Lima",    nota:9,  nc:"Não"  },
+];
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+window.onload = () => {
+  carregarConfigUI();
+  popularFiltroEmpresas();
+  carregarDados();
+};
+
+function carregarConfigUI() {
+  if (CONFIG.sheetId)     document.getElementById('sheetId').value     = CONFIG.sheetId;
+  if (CONFIG.colEmpresa)  document.getElementById('colEmpresa').value  = CONFIG.colEmpresa;
+  if (CONFIG.colData)     document.getElementById('colData').value     = CONFIG.colData;
+  if (CONFIG.colNota)     document.getElementById('colNota').value     = CONFIG.colNota     || '';
+  if (CONFIG.colNC)       document.getElementById('colNC').value       = CONFIG.colNC       || '';
+  if (CONFIG.colAtividade)document.getElementById('colAtividade').value= CONFIG.colAtividade|| '';
+  if (CONFIG.colTecnico)  document.getElementById('colTecnico').value  = CONFIG.colTecnico  || '';
+}
+
+function salvarConfig() {
+  CONFIG = {
+    sheetId:      document.getElementById('sheetId').value.trim(),
+    colEmpresa:   document.getElementById('colEmpresa').value.trim().toUpperCase(),
+    colData:      document.getElementById('colData').value.trim().toUpperCase(),
+    colNota:      document.getElementById('colNota').value.trim().toUpperCase(),
+    colNC:        document.getElementById('colNC').value.trim().toUpperCase(),
+    colAtividade: document.getElementById('colAtividade').value.trim().toUpperCase(),
+    colTecnico:   document.getElementById('colTecnico').value.trim().toUpperCase(),
+  };
+  localStorage.setItem('aprDashConfig', JSON.stringify(CONFIG));
+  switchTab('visao', document.querySelector('.tab-btn'));
+  carregarDados();
+}
+
+function popularFiltroEmpresas() {
+  const sel = document.getElementById('filtroEmpresa');
+  EMPRESAS.forEach(e => {
+    const opt = document.createElement('option');
+    opt.value = e; opt.textContent = e;
+    sel.appendChild(opt);
+  });
+}
+
+// ── CARREGAR DADOS ────────────────────────────────────────────────────────────
+async function carregarDados() {
+  if (!CONFIG.sheetId) {
+    usarDemoData();
+    return;
+  }
+
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}/gviz/tq?tqx=out:json&sheet=Base`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Erro ao acessar planilha');
+    const text = await resp.text();
+    const json = JSON.parse(text.substring(47, text.length - 2));
+
+    const colIdx = (letra) => letra ? letra.charCodeAt(0) - 65 : -1;
+    const iEmpresa   = colIdx(CONFIG.colEmpresa);
+    const iData      = colIdx(CONFIG.colData);
+    const iNota      = colIdx(CONFIG.colNota);
+    const iNC        = colIdx(CONFIG.colNC);
+    const iAtividade = colIdx(CONFIG.colAtividade);
+    const iTecnico   = colIdx(CONFIG.colTecnico);
+
+    todosRegistros = [];
+    json.table.rows.forEach(row => {
+      const empresa = row.c[iEmpresa]?.v;
+      if (!empresa) return;
+      const dataRaw = row.c[iData]?.v;
+      let data = null;
+      if (dataRaw) {
+        if (typeof dataRaw === 'string') data = new Date(dataRaw);
+        else if (typeof dataRaw === 'object' && dataRaw.f) {
+          const parts = dataRaw.f.split('/');
+          data = new Date(parts[2], parts[1]-1, parts[0]);
+        }
+      }
+      todosRegistros.push({
+        empresa,
+        data: data || new Date(),
+        nota:      row.c[iNota]?.v ?? null,
+        nc:        row.c[iNC]?.v ?? 'Não',
+        atividade: row.c[iAtividade]?.v ?? '—',
+        tecnico:   row.c[iTecnico]?.v ?? '—',
+      });
+    });
+
+    document.getElementById('alertBanner').classList.add('hidden');
+    document.getElementById('lastUpdate').innerHTML = `<div class="dot-live"></div><span>Atualizado agora</span>`;
+    aplicarFiltros();
+  } catch(e) {
+    console.warn('Erro ao carregar Sheets, usando demo:', e);
+    usarDemoData();
+  }
+}
+
+function usarDemoData() {
+  todosRegistros = DEMO_DATA;
+  document.getElementById('alertBanner').classList.remove('hidden');
+  document.getElementById('alertMsg').textContent = 'Configure a planilha na aba ⚙️ Configurar para carregar dados reais. Exibindo dados de demonstração.';
+  document.getElementById('lastUpdate').innerHTML = `<div class="dot-live" style="background:#F59E0B"></div><span>Demonstração</span>`;
+  aplicarFiltros();
+}
+
+// ── FILTROS ───────────────────────────────────────────────────────────────────
+function aplicarFiltros() {
+  const empresa = document.getElementById('filtroEmpresa').value;
+  const periodo = parseInt(document.getElementById('filtroPeriodo').value) || 0;
+  const cutoff  = periodo ? new Date(Date.now() - periodo * 86400000) : null;
+
+  registrosFiltrados = todosRegistros.filter(r => {
+    if (empresa && r.empresa !== empresa) return false;
+    if (cutoff && r.data < cutoff) return false;
+    return true;
+  });
+
+  renderizarTudo();
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function renderizarTudo() {
+  const dados = registrosFiltrados;
+
+  // KPIs
+  const porEmpresa = {};
+  EMPRESAS.forEach(e => porEmpresa[e] = { total:0, nc:0, notas:[] });
+  dados.forEach(r => {
+    if (!porEmpresa[r.empresa]) porEmpresa[r.empresa] = { total:0, nc:0, notas:[] };
+    porEmpresa[r.empresa].total++;
+    if ((r.nc+'').toLowerCase() === 'sim') porEmpresa[r.empresa].nc++;
+    if (r.nota !== null) porEmpresa[r.empresa].notas.push(+r.nota);
+  });
+
+  const empresasComDados = EMPRESAS.filter(e => porEmpresa[e].total > 0);
+
+  // % conformidade = auditorias SEM NC / total
+  const confPorEmpresa = {};
+  empresasComDados.forEach(e => {
+    const d = porEmpresa[e];
+    confPorEmpresa[e] = d.total > 0 ? Math.round((d.total - d.nc) / d.total * 100) : 0;
+  });
+
+  const mediaGeral = empresasComDados.length > 0
+    ? Math.round(empresasComDados.reduce((s,e) => s + confPorEmpresa[e], 0) / empresasComDados.length)
+    : 0;
+  const totalNC  = dados.filter(r => (r.nc+'').toLowerCase() === 'sim').length;
+  const melhor   = empresasComDados.sort((a,b) => confPorEmpresa[b] - confPorEmpresa[a])[0];
+
+  document.getElementById('kpi-conf').textContent    = dados.length ? `${mediaGeral}%` : '—';
+  document.getElementById('kpi-aud').textContent     = dados.length;
+  document.getElementById('kpi-nc').textContent      = totalNC;
+  document.getElementById('kpi-melhor').textContent  = melhor || '—';
+  document.getElementById('kpi-melhor-sub').textContent = melhor ? `${confPorEmpresa[melhor]}% conformidade` : '';
+
+  renderGraficoBarras(empresasComDados, confPorEmpresa);
+  renderGraficoNC(empresasComDados, porEmpresa);
+  renderGraficoLinha(porEmpresa);
+  renderRanking(empresasComDados, confPorEmpresa, porEmpresa);
+  renderGraficoNota(empresasComDados, porEmpresa);
+  renderTabela(dados);
+}
+
+function corConf(v) {
+  if (v >= 90) return '#1B6B2E';
+  if (v >= 75) return '#F59E0B';
+  return '#C62828';
+}
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function renderGraficoBarras(empresas, conf) {
+  destroyChart('barras');
+  const ctx = document.getElementById('chartBarras').getContext('2d');
+  charts['barras'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: empresas,
+      datasets: [{
+        data: empresas.map(e => conf[e]),
+        backgroundColor: empresas.map(e => corConf(conf[e]) + 'CC'),
+        borderColor: empresas.map(e => corConf(conf[e])),
+        borderWidth: 2, borderRadius: 6,
+      }]
+    },
+    options: {
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.raw}% conformidade` } },
+        annotation: {}
+      },
+      scales: {
+        y: {
+          min: 0, max: 100,
+          grid: { color: '#E8F0E9' },
+          ticks: { callback: v => v+'%', font: { family:'DM Sans', size:11 } }
+        },
+        x: { grid: { display:false }, ticks: { font: { family:'DM Sans', size:11 } } }
+      },
+      animation: { duration: 800 }
+    }
+  });
+}
+
+function renderGraficoNC(empresas, porEmpresa) {
+  destroyChart('nc');
+  const ctx = document.getElementById('chartNC').getContext('2d');
+  charts['nc'] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: empresas,
+      datasets: [{
+        data: empresas.map(e => porEmpresa[e].nc),
+        backgroundColor: empresas.map(e => CORES_EMPRESA[e] || '#888'),
+        borderWidth: 2, borderColor: '#fff',
+      }]
+    },
+    options: {
+      plugins: {
+        legend: { position:'bottom', labels: { font: { family:'DM Sans', size:11 }, padding:10 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} NC` } }
+      },
+      animation: { duration: 800 }
+    }
+  });
+}
+
+function renderGraficoLinha(porEmpresa) {
+  destroyChart('linha');
+  const ctx = document.getElementById('chartLinha').getContext('2d');
+
+  // Agrupar por mes
+  const meses = {};
+  todosRegistros.forEach(r => {
+    const key = `${r.data.getFullYear()}-${String(r.data.getMonth()+1).padStart(2,'0')}`;
+    const label = r.data.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}).replace('. ','/')
+    if (!meses[key]) meses[key] = { label, dados:{} };
+    const e = r.empresa;
+    if (!meses[key].dados[e]) meses[key].dados[e] = { total:0, nc:0 };
+    meses[key].dados[e].total++;
+    if ((r.nc+'').toLowerCase()==='sim') meses[key].dados[e].nc++;
+  });
+
+  const keys = Object.keys(meses).sort();
+  const labels = keys.map(k => meses[k].label);
+
+  const datasets = EMPRESAS.map(emp => ({
+    label: emp,
+    data: keys.map(k => {
+      const d = meses[k].dados[emp];
+      return d && d.total > 0 ? Math.round((d.total-d.nc)/d.total*100) : null;
+    }),
+    borderColor: CORES_EMPRESA[emp] || '#888',
+    backgroundColor: (CORES_EMPRESA[emp] || '#888') + '22',
+    pointBackgroundColor: CORES_EMPRESA[emp] || '#888',
+    borderWidth: 2.5, pointRadius: 4, pointHoverRadius: 6,
+    tension: 0.3, spanGaps: true,
+  }));
+
+  charts['linha'] = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      plugins: {
+        legend: { position:'bottom', labels: { font:{family:'DM Sans',size:11}, padding:12 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw}%` } }
+      },
+      scales: {
+        y: {
+          min:0, max:100,
+          grid: { color:'#E8F0E9' },
+          ticks: { callback: v => v+'%', font:{family:'DM Sans',size:11} }
+        },
+        x: { grid:{display:false}, ticks:{font:{family:'DM Sans',size:11}} }
+      },
+      animation: { duration: 800 }
+    }
+  });
+}
+
+function renderRanking(empresas, conf, porEmpresa) {
+  const sorted = [...empresas].sort((a,b) => conf[b] - conf[a]);
+  const medals = ['🥇','🥈','🥉'];
+  const html = sorted.map((e, i) => {
+    const c = conf[e]; const nc = porEmpresa[e].nc;
+    const cor = corConf(c);
+    return `<div class="ranking-item">
+      <div class="rank-pos">${medals[i] || (i+1)+'º'}</div>
+      <div class="rank-info">
+        <div class="rank-name">${e} <span class="rank-nc ${nc>0?'badge-nc':'badge-ok'}">${nc} NC</span></div>
+        <div class="rank-bar-wrap">
+          <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${c}%;background:${cor}"></div></div>
+          <span class="rank-pct" style="color:${cor}">${c}%</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('rankingList').innerHTML = html || '<div style="color:var(--muted);font-size:13px">Sem dados</div>';
+}
+
+function renderGraficoNota(empresas, porEmpresa) {
+  destroyChart('nota');
+  const ctx = document.getElementById('chartNota').getContext('2d');
+  const notas = empresas.map(e => {
+    const ns = porEmpresa[e].notas;
+    return ns.length ? +(ns.reduce((a,b)=>a+b,0)/ns.length).toFixed(1) : 0;
+  });
+  charts['nota'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: empresas,
+      datasets: [{
+        label: 'Nota média',
+        data: notas,
+        backgroundColor: empresas.map(e => (CORES_EMPRESA[e]||'#888')+'BB'),
+        borderColor: empresas.map(e => CORES_EMPRESA[e]||'#888'),
+        borderWidth: 2, borderRadius: 6,
+      }]
+    },
+    options: {
+      plugins: { legend:{display:false}, tooltip:{callbacks:{label:ctx=>` Nota: ${ctx.raw}/10`}} },
+      scales: {
+        y: { min:0, max:10, grid:{color:'#E8F0E9'}, ticks:{font:{family:'DM Sans',size:11}} },
+        x: { grid:{display:false}, ticks:{font:{family:'DM Sans',size:11}} }
+      },
+      animation:{duration:800}
+    }
+  });
+}
+
+function renderTabela(dados) {
+  document.getElementById('totalRegistros').textContent = `${dados.length} registros`;
+  const sorted = [...dados].sort((a,b) => b.data - a.data);
+  const html = sorted.map(r => {
+    const conf = (r.nc+'').toLowerCase() === 'sim';
+    const nota = r.nota !== null ? +r.nota : null;
+    const notaCor = nota !== null ? (nota>=8?'var(--green)':nota>=6?'var(--yellow)':'var(--red)') : 'var(--muted)';
+    const cor = CORES_EMPRESA[r.empresa] || '#888';
+    return `<tr>
+      <td>${r.data.toLocaleDateString('pt-BR')}</td>
+      <td><span class="empresa-dot"><span class="dot" style="background:${cor}"></span>${r.empresa}</span></td>
+      <td>${r.atividade}</td>
+      <td>${r.tecnico}</td>
+      <td><span class="nota-val" style="color:${notaCor}">${nota !== null ? nota+'/10' : '—'}</span></td>
+      <td><span class="badge ${conf?'badge-critico':'badge-bom'}">${conf?'Não Conforme':'Conforme'}</span></td>
+      <td><span class="badge ${conf?'badge-nc':'badge-ok'}">${conf?'⚠ NC':'✓ OK'}</span></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">Sem registros no período</td></tr>`;
+  document.getElementById('tabelaRegistros').innerHTML = html;
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  else document.querySelectorAll('.tab-btn').forEach(b => { if(b.getAttribute('onclick')?.includes(id)) b.classList.add('active'); });
+}
+</script>
+
+</body>
+</html>
